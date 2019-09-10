@@ -21,7 +21,7 @@ public class FruitActionManager : MonoBehaviour {
     private List<int> connectingPath = null;
 
     // timer to limit display of connecting path
-    private const float SELECT_REMOVAL_TIME = 5.0f;
+    private const float SELECT_REMOVAL_TIME = 0.25f;
     private float removalTime = 0.0f;
     private bool startTimer = false;
 
@@ -103,24 +103,6 @@ public class FruitActionManager : MonoBehaviour {
             for (int j = 1; j < this.Columns-1; j++) {
                 FruitUI UIScript = this.UIElements[this.Columns * i + j].GetComponent<FruitUI>();
                 UIScript.SetId(this.Columns * i + j);
-                // set neighbours
-                Fruit neighbour;
-                if(i > 1) {
-                    neighbour = this.UIElements[this.Columns * (i - 1) + j].GetComponent<FruitUI>().GetFruit();
-                    UIScript.SetNeighbour(neighbour, Direction.N);
-                }
-                if(i < this.Rows - 2) {
-                    neighbour = this.UIElements[this.Columns * (i + 1) + j].GetComponent<FruitUI>().GetFruit();
-                    UIScript.SetNeighbour(neighbour, Direction.S);
-                }
-                if(j > 1) {
-                    neighbour = this.UIElements[this.Columns * i + j - 1].GetComponent<FruitUI>().GetFruit();
-                    UIScript.SetNeighbour(neighbour, Direction.W);
-                }
-                if(j < this.Columns - 2) {
-                    neighbour = this.UIElements[this.Columns * i + j + 1].GetComponent<FruitUI>().GetFruit();
-                    UIScript.SetNeighbour(neighbour, Direction.E);
-                }
             }
         }
     }
@@ -170,113 +152,6 @@ public class FruitActionManager : MonoBehaviour {
         return (this.fruitSelectedIDOne != -1 && this.fruitSelectedIDTwo != -1 && connectingPath != null);
     }
 
-    // get the direction of fruitB relative to fruitA
-    private Direction FindNeighbourDir(int idFruitA, int idFruitB) {
-        FruitUI fruitA = this.UIElements[idFruitA].GetComponent<FruitUI>();
-        FruitUI fruitB = this.UIElements[idFruitB].GetComponent<FruitUI>();
-
-        return (fruitA.FindNeighbourDir(fruitB.GetFruit())) ;
-	}
-
-    // retrives the Map edge UI ID that is in a straight line from the given point
-    // in the given direction
-    private int GetMapEdgePosition(Direction d, int point) {
-        int i = point / this.Columns;
-        int j = point % this.Columns;
-        switch(d) {
-            case Direction.N:
-                return (j);
-            case Direction.S:
-                return (this.Columns * (this.Rows - 1) + j);
-            case Direction.W:
-                return (this.Columns * i);
-            default:
-                return (this.Columns * i + Columns - 1);
-        }
-    }
-
-    // direct neighbours will share opposing directions as they are in opposing directions relative
-    // to each other
-    private bool AreDirectNeighbours(Direction dA, Direction dB) {
-        return (dA == Direction.W && dB == Direction.E
-            || dA == Direction.E && dB == Direction.W
-            || dA == Direction.N && dB == Direction.S
-            || dA == Direction.S && dB == Direction.N);
-    }
-
-    // wall neighbours will both return the relative direction of the map edge that makes them neighbours
-    private bool AreMapEdgeNeighbours(Direction dA, Direction dB) {
-        return (dA == dB && dA != Direction.NAD);
-    }
-
-    // tell the FruitUI elements to update who their neighbours are
-    private void UpdateNeighbours(int idA, int idB) {
-        FruitUI fruitA = this.UIElements[idA].GetComponent<FruitUI>();
-        FruitUI fruitB = this.UIElements[idB].GetComponent<FruitUI>();
-        fruitA.UpdateNeighbours(fruitB.GetFruit());
-        fruitB.UpdateNeighbours(fruitA.GetFruit());
-    }
-
-    // draws a line between two points. line is always vertical or horizontal
-    private List<int> BuildLineBetweenPoints(int start, int finish) {
-
-        List<int> filledLine = new List<int>();
-        // either i or j of points mush be the same. Iterate along the different one;
-        int startI = start / this.Columns;
-        int startJ = start % this.Columns;
-        int finishI = finish / this.Columns;
-        int finishJ = finish % this.Columns;
-
-        // Complex while loop conditions. Basically, done to preserve order of start to finish as some
-        // starts and finishes may be graphically above and blow each other
-        if(startI == finishI) {
-            int j = startJ;
-            while ((startJ < finishJ && j < finishJ) || (startJ > finishJ && j > finishJ)) {
-                filledLine.Add(this.Columns * startI + j);
-                if (startJ < finishJ) j++;
-                if (startJ > finishJ) j--;
-            }
-        } else {
-            int i = startI;
-            while ((startI < finishI && i < finishI) || (startI > finishI && i > finishI)) {
-                filledLine.Add(this.Columns * i + startJ);
-                if (startI < finishI) i++;
-                if (startI > finishI) i--;
-            } 
-        }
-        return filledLine;
-
-    }
-
-    // Draw a line to the common neighbour. Two types of neighbour, ones that are neighbour via map edge and
-    // ones that are directly neighbours. This is only called when we know they are neighbours, so no risk of NAD
-    private List<int> GetPathBetweenSelected(int start, int finish, Direction fromStart, Direction fromFinish) {
-        // if they are wall neighbours
-        List<int> path = new List<int>();
-
-        // the order of the elements in the path are important for the line drawing function. that is why
-        // the order of these path.addrange calls must stay in this order as we need the relative direction
-        // of the path at each UI element to select the correct sprite
-        if (!AreMapEdgeNeighbours(fromStart, fromFinish)) {
-            // draw line from start to edge position
-            path.AddRange(BuildLineBetweenPoints(start, finish));
-        } else {
-            // wall neighbour drawings will have two corners and therefor 3 linesegments (start to edge1,
-            // edge1 to edge2, and edge2 to finish)
-            int startEdge = GetMapEdgePosition(fromStart, start);
-            int finishEdge = GetMapEdgePosition(fromFinish, finish);
-            path.AddRange(BuildLineBetweenPoints(start, startEdge));
-            path.AddRange(BuildLineBetweenPoints(startEdge, finishEdge));
-            path.AddRange(BuildLineBetweenPoints(finishEdge, finish));
-        }
-
-        // stick the finish on to create a complete history of the path
-        path.Add(finish);
-        return path;
-    }
-
-    /*********************************/
-
     private bool AreSameType(int IdFruitA, int IdFruitB) {
         return (UIElements[IdFruitA].GetComponent<FruitUI>().GetFruitType()
                 == UIElements[IdFruitB].GetComponent<FruitUI>().GetFruitType());
@@ -321,7 +196,6 @@ public class FruitActionManager : MonoBehaviour {
 
         List<int> list = new List<int>();
         list.Add(IdStart);
-        Debug.Log("Start: " + IdStart);
         agenda.Enqueue(list);
         visited[0, IdStart] = true;
 

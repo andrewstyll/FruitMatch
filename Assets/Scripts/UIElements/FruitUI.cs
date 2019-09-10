@@ -7,8 +7,9 @@ using Random = UnityEngine.Random;
 
 public class FruitUI : MonoBehaviour {
 
-    // fruit to seperate logic from UILogic
-    private Fruit fruit;
+    // fruit identifiers
+    private int id;
+    private FruitType fruitType;
 
     // button and image attached to component
     private Button selectButton;
@@ -44,9 +45,8 @@ public class FruitUI : MonoBehaviour {
     private void InitFruit() {
         // select randomly from the FruitTypes available and init fruit logic
         Array fruitTypes = Enum.GetValues(typeof(FruitType));
-        FruitType fruitType = (FruitType)fruitTypes.GetValue(Random.Range(0, fruitTypes.Length));
-        this.fruit = new Fruit(fruitType);
-        switch(fruitType) {
+        this.fruitType = (FruitType)fruitTypes.GetValue(Random.Range(0, fruitTypes.Length));
+        switch(this.fruitType) {
             case FruitType.Apple:
                 this.fruitImage.sprite = this.apple;
                 break;
@@ -72,33 +72,15 @@ public class FruitUI : MonoBehaviour {
     private void OnFruitSelect() {
         // call method in delegate to notify FruitActionManager
         //Debug.Log(this.fruit.printNeighbours());
-        FruitSelected(this.fruit.GetId());
+        FruitSelected(this.id);
     }
 
     /**** Public API ****/
     public void SetId(int id) {
-        this.fruit.SetId(id);
+        this.id = id;
     }
 
     public FruitType GetFruitType() {
-        return this.fruit.GetFruitType();
-    }
-
-    public void SetNeighbour(Fruit neighbour, Direction d) {
-        this.fruit.SetNeighbour(neighbour, d);
-    }
-
-    public Fruit GetFruit() {
-        return this.fruit;
-    }
-
-    public Direction FindNeighbourDir(Fruit fruit) {
-        // if neighbour is invalid, this will return Direction.NAD
-        return this.fruit.FindNeighbourDir(fruit);
-    }
-
-    // context is this.fruit and the fruit argument are being removed. Need to update the stored neighbours
-    public void UpdateNeighbours(Fruit fruit) {
-        this.fruit.UpdateNeighbours(fruit);
+        return this.fruitType;
     }
 }
