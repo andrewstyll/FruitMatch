@@ -1,4 +1,5 @@
-﻿public enum FruitType {
+﻿// types of fruit supported
+public enum FruitType {
     Lemon,
     Lime,
     Orange,

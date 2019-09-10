@@ -3,10 +3,12 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class LineUI : MonoBehaviour {
-    // Use this for initialization
+
+    // image control variables
     private Image lineImage;
     private bool makeImageVisible = false;
 
+    // directional sprites
     [SerializeField] private Sprite SE;
     [SerializeField] private Sprite NE;
     [SerializeField] private Sprite SW;
@@ -20,12 +22,7 @@ public class LineUI : MonoBehaviour {
         HideImage();
     }
 
-    void Start() {
-
-    }
-
-    // Update is called once per frame
-    void Update() {
+    private void Update() {
         if(makeImageVisible && this.lineImage.enabled == false) {
             ShowImage();
         } else if(!makeImageVisible && this.lineImage.enabled == true) {
@@ -41,6 +38,7 @@ public class LineUI : MonoBehaviour {
         this.lineImage.enabled = true;
     }
 
+    // return the direction of i,j relative to my i,j
     private Direction GetCardinalDirection(int i, int j, int myI, int myJ) {
         if(i > myI) {
             return Direction.S;
@@ -59,9 +57,11 @@ public class LineUI : MonoBehaviour {
     public void ChooseImage(int iPrev, int jPrev, int iCurr, int jCurr, int iNext, int jNext) {
         Sprite lineSprite;
 
+        // get the directional context around this lineUI
         Direction prev = GetCardinalDirection(iPrev, jPrev, iCurr, jCurr);
         Direction next = GetCardinalDirection(iNext, jNext, iCurr, jCurr);
 
+        // use context to select correct sprites
         if(prev == Direction.N && next == Direction.S ||
             prev == Direction.S && next == Direction.N) {
             lineSprite = Vertical;
@@ -85,6 +85,7 @@ public class LineUI : MonoBehaviour {
         makeImageVisible = true;
     }
 
+    // hide the line image
     public void RemoveImage() {
         makeImageVisible = false;
     }

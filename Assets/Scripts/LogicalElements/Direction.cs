@@ -2,5 +2,6 @@
     N,
     S,
     E,
-    W
+    W,
+    NAD // not a direction, for invalid/nonexistant directions
 }

@@ -7,9 +7,10 @@ using Random = UnityEngine.Random;
 
 public class FruitUI : MonoBehaviour {
 
-    private int id;
+    // fruit to seperate logic from UILogic
     private Fruit fruit;
 
+    // button and image attached to component
     private Button selectButton;
     private Image fruitImage;
 
@@ -20,22 +21,15 @@ public class FruitUI : MonoBehaviour {
     [SerializeField] private Sprite grape;
     [SerializeField] private Sprite cherry;
 
-    public delegate void EventHandler(int id);
-    public static event EventHandler FruitSelected;
+    // subscribe to this delegate to know when a fruit has been selected
+    public delegate void FruitEventHandler(int id);
+    public static event FruitEventHandler FruitSelected;
 
     private void Awake() {
         this.fruitImage = this.GetComponent<Image>();
         this.selectButton = this.GetComponent<Button>();
         this.selectButton.onClick.AddListener(OnFruitSelect);
         InitFruit();
-    }
-
-    // Start is called before the first frame update
-    void Start() {
-    }
-
-    // Update is called once per frame
-    void Update() {
     }
 
     private void OnDestroy() {
@@ -48,7 +42,7 @@ public class FruitUI : MonoBehaviour {
     }
 
     private void InitFruit() {
-        // select randomly from the FruitTypes available
+        // select randomly from the FruitTypes available and init fruit logic
         Array fruitTypes = Enum.GetValues(typeof(FruitType));
         FruitType fruitType = (FruitType)fruitTypes.GetValue(Random.Range(0, fruitTypes.Length));
         this.fruit = new Fruit(fruitType);
@@ -78,12 +72,11 @@ public class FruitUI : MonoBehaviour {
     private void OnFruitSelect() {
         // call method in delegate to notify FruitActionManager
         //Debug.Log(this.fruit.printNeighbours());
-        FruitSelected(this.id);
+        FruitSelected(this.fruit.GetId());
     }
 
-    /**** API ****/
+    /**** Public API ****/
     public void SetId(int id) {
-        this.id = id;
         this.fruit.SetId(id);
     }
 
@@ -95,11 +88,12 @@ public class FruitUI : MonoBehaviour {
         return this.fruit;
     }
 
-    public bool CompareNeighbour(Fruit fruit) {
-        // if neighbour is valid
-        return this.fruit.isValidNeighbour(fruit);
+    public Direction FindNeighbourDir(Fruit fruit) {
+        // if neighbour is invalid, this will return Direction.NAD
+        return this.fruit.FindNeighbourDir(fruit);
     }
 
+    // context is this.fruit and the fruit argument are being removed. Need to update the stored neighbours
     public void UpdateNeighbours(Fruit fruit) {
         this.fruit.UpdateNeighbours(fruit);
     }
