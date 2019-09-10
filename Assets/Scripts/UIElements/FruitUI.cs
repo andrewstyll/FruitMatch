@@ -80,6 +80,10 @@ public class FruitUI : MonoBehaviour {
         this.fruit.SetId(id);
     }
 
+    public FruitType GetFruitType() {
+        return this.fruit.GetFruitType();
+    }
+
     public void SetNeighbour(Fruit neighbour, Direction d) {
         this.fruit.SetNeighbour(neighbour, d);
     }
