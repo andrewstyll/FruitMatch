@@ -17,6 +17,8 @@ public class FruitUI : MonoBehaviour {
     [SerializeField] private Sprite lemon;
     [SerializeField] private Sprite lime;
     [SerializeField] private Sprite orange;
+    [SerializeField] private Sprite grape;
+    [SerializeField] private Sprite cherry;
 
     public delegate void EventHandler(int id);
     public static event EventHandler FruitSelected;
@@ -62,6 +64,12 @@ public class FruitUI : MonoBehaviour {
                 break;
             case FruitType.Orange:
                 this.fruitImage.sprite = this.orange;
+                break;
+            case FruitType.Grape:
+                this.fruitImage.sprite = this.grape;
+                break;
+            case FruitType.Cherry:
+                this.fruitImage.sprite = this.cherry;
                 break;
         }
     }

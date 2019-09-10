@@ -2,5 +2,7 @@
     Lemon,
     Lime,
     Orange,
-    Apple
+    Apple,
+    Grape,
+    Cherry
 }

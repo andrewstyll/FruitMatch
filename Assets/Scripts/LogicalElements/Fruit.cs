@@ -109,11 +109,12 @@ public class Fruit {
     }
 
     public void UpdateNeighbours(Fruit fruit) {
-        // perform vertical swap
+        // perform vertical swap, then horizontal
         UpdateNeighbourPair(Direction.N, Direction.S, fruit);
         UpdateNeighbourPair(Direction.E, Direction.W, fruit);
     }
 
+    // debug method to verify neighbour set and update
     public String printNeighbours() {
         String printMe = "";
         foreach (KeyValuePair<Direction, Fruit> entry in this.neighbours) {

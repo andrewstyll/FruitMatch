@@ -241,6 +241,7 @@ public class FruitActionManager : MonoBehaviour {
 			// call compare on fruit one and two
 			if (id != fruitSelectedIDOne && AreNeighbours(fruitSelectedIDOne, id)) {
 				fruitSelectedIDTwo = id;
+                
                 this.connectingPath = GetPathBetweenSelected(fruitSelectedIDOne, fruitSelectedIDTwo);
                 UpdateNeighbours(fruitSelectedIDOne, fruitSelectedIDTwo);
                 startTimer = true;
