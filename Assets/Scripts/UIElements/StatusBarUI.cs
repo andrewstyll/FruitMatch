@@ -15,22 +15,23 @@ public class StatusBarUI : MonoBehaviour {
     private Slider timer;
     private Text scoreText;
 
+    // mark that the game has begun
     private bool gameIsStarted = false;
 
     [SerializeField] private GameObject timerObject;
     [SerializeField] private GameObject scoreObject;
 
+    // subscribe to this delegate to know when the game is over
+    public delegate void StatusBarHandler(string scoreText);
+    public static event StatusBarHandler EndGame;
+
     private void Awake() {
         RulesUI.StartGame += StartGame;
         FruitActionManager.ValidPairCreated += PairCreated;
-
-        this.score = 0;
-        this.timeRemaining = TIME_PER_GAME;
+        EndGameUI.RestartGame += StartGame;
 
         this.timer = timerObject.GetComponent<Slider>();
         this.scoreText = scoreObject.GetComponent<Text>();
-
-        this.scoreText.text = SCORE_BASE_TEXT + score.ToString();
     }
 
     private void Update() {
@@ -41,6 +42,7 @@ public class StatusBarUI : MonoBehaviour {
                 this.scoreText.text = SCORE_BASE_TEXT + score.ToString();
             } else if(this.timeRemaining <= 0.0f) {
                 this.gameIsStarted = false;
+                EndGame(SCORE_BASE_TEXT + score.ToString());
             }
         }
     }
@@ -49,6 +51,15 @@ public class StatusBarUI : MonoBehaviour {
     private void OnDestroy() {
         RulesUI.StartGame -= StartGame;
         FruitActionManager.ValidPairCreated -= PairCreated;
+        EndGameUI.RestartGame -= StartGame;
+    }
+
+    // init the UI data. Seperate as may want called w/o event
+    private void InitUI() {
+        this.score = 0;
+        this.timeRemaining = TIME_PER_GAME;
+
+        this.scoreText.text = SCORE_BASE_TEXT + score.ToString();
     }
 
     /**** Events ****/
@@ -59,6 +70,7 @@ public class StatusBarUI : MonoBehaviour {
 
     // on game start, set variable to allow clock to being ticking
     private void StartGame() {
+        InitUI();
         this.gameIsStarted = true;
     }
 }

@@ -29,6 +29,9 @@ public class FruitActionManager : MonoBehaviour {
 	private GameObject[] UIElements;
     private bool[] isFruit;
 
+    // signal when game restart has occurred
+    private bool redrawGame = false;
+
     // manage button selecting with EventSystem
     [SerializeField] private EventSystem eventSystem;
 
@@ -38,6 +41,7 @@ public class FruitActionManager : MonoBehaviour {
 
     private void Awake() {
         FruitUI.FruitSelected += HandleFruitSelect;
+        EndGameUI.RestartGame += StartGame;
         SpawnUI();
     }
 
@@ -46,6 +50,12 @@ public class FruitActionManager : MonoBehaviour {
     }
 
     private void Update() {
+
+        if(redrawGame) {
+            SpawnUI();
+            InitFruitUI();
+            redrawGame = false;
+        }
 
         if(PairSelected()) {
             if(startTimer) {
@@ -71,6 +81,7 @@ public class FruitActionManager : MonoBehaviour {
     // unsub from events to prevent potential future null reference
     private void OnDestroy() {
         FruitUI.FruitSelected -= HandleFruitSelect;
+        EndGameUI.RestartGame -= StartGame;
     }
 
     // draw the LineUI and fruitUI elements
@@ -105,6 +116,16 @@ public class FruitActionManager : MonoBehaviour {
                 UIScript.SetId(this.Columns * i + j);
             }
         }
+    }
+
+    private void ClearUI() {
+        // only iterate through fruit, so avoid outside edge of grid
+        for (int i = 0; i < this.Rows; i++) {
+            for (int j = 0; j < this.Columns; j++) {
+                Destroy(this.UIElements[this.Columns * i + j]);
+            }
+        }
+        
     }
 
     // replace a FruitUI with a LineUI as pairs are selected by user
@@ -152,6 +173,7 @@ public class FruitActionManager : MonoBehaviour {
         return (this.fruitSelectedIDOne != -1 && this.fruitSelectedIDTwo != -1 && connectingPath != null);
     }
 
+    // check matching fruit type
     private bool AreSameType(int IdFruitA, int IdFruitB) {
         return (UIElements[IdFruitA].GetComponent<FruitUI>().GetFruitType()
                 == UIElements[IdFruitB].GetComponent<FruitUI>().GetFruitType());
@@ -166,6 +188,7 @@ public class FruitActionManager : MonoBehaviour {
         return (iA != iB && jA != jB);
     }
 
+    // get all possible neighbours of id (N,S,E,W)
     private List<int> GetNeighbours(int id) {
         List<int> neighbours = new List<int>();
         int i = id / this.Columns;
@@ -186,32 +209,40 @@ public class FruitActionManager : MonoBehaviour {
         return neighbours;
     }
 
+    // determine if a valid path exists. uses side effect to store valid path if one exists
+    // minimizes by fewest turns, shortest path (in that order)
     private bool ValidPathExists(int IdStart, int IdFinish) {
-        // perform BFS by layer
+        // perform BFS, storing visited by the turns made.
         bool[,] visited = new bool[MAX_TURNS + 1, this.Rows * this.Columns];
         int numTurns = 0; // denotes current # of turns we are on
-        bool ret = false;
-        Queue<List<int>> agenda = new Queue<List<int>>();
-        Queue<List<int>> nextAgenda = new Queue<List<int>>();
 
+        // use the agenda to store current paths that have num turns and numturns+1 paths
+        // store lists as when we reach the finish, we need to draw the path
+        Queue<List<int>> numTurnsAgenda = new Queue<List<int>>();
+        Queue<List<int>> numTurnsPlusOneAgenda = new Queue<List<int>>();
+
+        // push start onto the list
         List<int> list = new List<int>();
         list.Add(IdStart);
-        agenda.Enqueue(list);
+        numTurnsAgenda.Enqueue(list);
         visited[0, IdStart] = true;
 
+        // paths are only valid if they take up to the max number of turns
         while (numTurns <= MAX_TURNS) {
-            while(agenda.Count > 0) {
-                list = agenda.Dequeue();
+            while(numTurnsAgenda.Count > 0) {
+                list = numTurnsAgenda.Dequeue();
 
-                // has to be valid space or finish, can't have 3 or more turns
+                // can't have more than 2 turns, and must be unvisited, and must either
+                // be the finish or a space with no fruit in it
                 List<int> neighbours = GetNeighbours(list[list.Count - 1]);
                 foreach(int neighbour in neighbours) {
                     int currTurns = numTurns;
                     
                     if (list.Count > 1 && IsTurn(list[list.Count - 2], neighbour)) {
-                        
                         currTurns++;
                     }
+                    // a path needs 3 turns min to visit somewhere it already has been, so
+                    // don't need to check for a path colliding with itself
                     if (currTurns <= MAX_TURNS && !visited[currTurns, neighbour]
                         && (neighbour == IdFinish || !this.isFruit[neighbour])) {
                         
@@ -222,21 +253,24 @@ public class FruitActionManager : MonoBehaviour {
                             this.connectingPath = newList;
                             return true;
                         } else if (!this.isFruit[neighbour]) {
+                            // if there wasn't a turn, store in the current agenda,
+                            // else store in the next turn agenda
                             if (currTurns == numTurns) {
-                                agenda.Enqueue(newList);
+                                numTurnsAgenda.Enqueue(newList);
                             } else {
-                                nextAgenda.Enqueue(newList);
+                                numTurnsPlusOneAgenda.Enqueue(newList);
                             }
                         }
                     }
                 }
             }
-            agenda = nextAgenda;
-            nextAgenda = new Queue<List<int>>();
+            // we're increasing the current number of turns index as no more paths exist with numTurns
+            numTurnsAgenda = numTurnsPlusOneAgenda;
+            numTurnsPlusOneAgenda = new Queue<List<int>>();
             numTurns++;
         }
 
-        return ret;
+        return false;
     }
 
     /**** Events ****/
@@ -262,5 +296,13 @@ public class FruitActionManager : MonoBehaviour {
             // use event handler here to deselect button for good UI
             this.eventSystem.SetSelectedGameObject(null);
         }
+    }
+
+    /**** Events ****/
+    private void StartGame() {
+        // clear the UI and mark redraw. On next update the oldUI will be gone and the
+        // new one will be rendered with correct UI id's and positions
+        ClearUI();
+        redrawGame = true;
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class RulesUI : MonoBehaviour {
 
+    // click to start the game
     private Button startGameButton;
 
     // subscribe to this delegate to know when to start the game
