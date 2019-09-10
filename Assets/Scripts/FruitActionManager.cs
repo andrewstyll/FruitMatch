@@ -29,7 +29,10 @@ public class FruitActionManager : MonoBehaviour {
     // manage button selecting with EventSystem
     [SerializeField] private EventSystem eventSystem;
 
-    // Start is called before the first frame update
+    // subscribe to this delegate to know when a pair has been made
+    public delegate void FruitPairHandler();
+    public static event FruitPairHandler ValidPairCreated;
+
     private void Awake() {
         FruitUI.FruitSelected += HandleFruitSelect;
         SpawnUI();
@@ -56,6 +59,7 @@ public class FruitActionManager : MonoBehaviour {
                 fruitSelectedIDOne = -1;
                 connectingPath = null;
                 removalTime = 0.0f;
+                ValidPairCreated();
             }
             
         }
@@ -288,9 +292,6 @@ public class FruitActionManager : MonoBehaviour {
 			}
             // use event handler here to deselect button for good UI
             this.eventSystem.SetSelectedGameObject(null);
-        } else {
-            // something went wrong ...
-            Debug.Log("Invalid State: " + fruitSelectedIDOne + " " + id);
         }
     }
 }
