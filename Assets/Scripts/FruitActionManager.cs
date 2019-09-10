@@ -65,6 +65,7 @@ public class FruitActionManager : MonoBehaviour {
         }
 	}
 
+    // unsub from events to prevent potential future null reference
     private void OnDestroy() {
         FruitUI.FruitSelected -= HandleFruitSelect;
     }
