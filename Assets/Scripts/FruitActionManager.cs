@@ -310,7 +310,6 @@ public class FruitActionManager : MonoBehaviour {
         }
     }
 
-    /**** Events ****/
     private void StartGame() {
         // clear the UI and mark redraw. On next update the oldUI will be gone and the
         // new one will be rendered with correct UI id's and positions
