@@ -185,25 +185,25 @@ public class FruitActionManager : MonoBehaviour {
         int iB = idB / this.Columns;
         int jB = idB % this.Columns;
 
-        return ((iA != iB && jA != jB) || idA == idB);
+        return (iA != iB && jA != jB);
     }
 
     // get all possible neighbours of id (N,S,E,W)
-    private List<int> GetNeighbours(int id, int numTurns, bool[,] visited) {
+    private List<int> GetNeighbours(int id) {
         List<int> neighbours = new List<int>();
         int i = id / this.Columns;
         int j = id % this.Columns;
 
-        if (i > 0 && !visited[numTurns, this.Columns * (i - 1) + j]) {
+        if (i > 0) {
             neighbours.Add(this.Columns * (i - 1) + j);
         }
-        if (i < this.Rows-1 && !visited[numTurns, this.Columns * (i + 1) + j]) {
+        if (i < this.Rows-1) {
             neighbours.Add(this.Columns * (i + 1) + j);
         }
-        if (j > 0 && !visited[numTurns, this.Columns * i + j - 1]) {
+        if (j > 0) {
             neighbours.Add(this.Columns * i + j - 1);
         }
-        if (j < this.Columns-1 && !visited[numTurns, this.Columns * i + j + 1]) {
+        if (j < this.Columns-1) {
             neighbours.Add(this.Columns * i + j + 1);
         }
         return neighbours;
@@ -234,24 +234,21 @@ public class FruitActionManager : MonoBehaviour {
 
                 // can't have more than 2 turns, and must be unvisited, and must either
                 // be the finish or a space with no fruit in it
-                List<int> neighbours = GetNeighbours(list[list.Count - 1], numTurns, visited);
-                
+                List<int> neighbours = GetNeighbours(list[list.Count - 1]);
                 foreach(int neighbour in neighbours) {
                     int currTurns = numTurns;
                     
                     if (list.Count > 1 && IsTurn(list[list.Count - 2], neighbour)) {
                         currTurns++;
                     }
-                    List<int> newList = new List<int>(list);
-                    newList.Add(neighbour);
-                    
-                    if (currTurns <= MAX_TURNS && !visited[currTurns, neighbour] ) { 
+                    // a path needs 3 turns min to visit somewhere it already has been, so
+                    // don't need to check for a path colliding with itself
+                    if (currTurns <= MAX_TURNS && !visited[currTurns, neighbour]
+                        && (neighbour == IdFinish || !this.isFruit[neighbour])) {
                         
-                        //List<int> newList = new List<int>(list);
-                        //newList.Add(neighbour);
-                        for(int i = currTurns+1; i <= MAX_TURNS; i++) {
-                            visited[i, neighbour] = true;
-                        }
+                        List<int> newList = new List<int>(list);
+                        newList.Add(neighbour);
+                        visited[currTurns, neighbour] = true;
                         if (neighbour == IdFinish) {
                             this.connectingPath = newList;
                             return true;
@@ -263,7 +260,7 @@ public class FruitActionManager : MonoBehaviour {
                             } else {
                                 numTurnsPlusOneAgenda.Enqueue(newList);
                             }
-                        } 
+                        }
                     }
                 }
             }
@@ -274,14 +271,6 @@ public class FruitActionManager : MonoBehaviour {
         }
 
         return false;
-    }
-
-    private string DebugList(List<int> list) {
-        string printMe = ", ";
-        for (int j = 0; j < list.Count; j++) {
-            printMe += list[j] + " ";
-        }
-        return printMe;
     }
 
     /**** Events ****/
@@ -299,7 +288,6 @@ public class FruitActionManager : MonoBehaviour {
                 startTimer = true;
 				
             } else {
-                
                 // was an invalid second selection (aka not a neighbour)
 				fruitSelectedIDTwo = -1;
 				fruitSelectedIDOne = -1;
