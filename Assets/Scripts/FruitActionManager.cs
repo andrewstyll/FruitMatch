@@ -17,7 +17,7 @@ public class FruitActionManager : MonoBehaviour {
 
     // -1 = fruit currently selected, connectingPath is path between fruit
     private int fruitSelectedIDOne = -1;
-	private int fruitSelectedIDTwo = -1;
+    private int fruitSelectedIDTwo = -1;
     private List<int> connectingPath = null;
 
     // timer to limit display of connecting path
@@ -25,8 +25,8 @@ public class FruitActionManager : MonoBehaviour {
     private float removalTime = 0.0f;
     private bool startTimer = false;
 
-	// store spawned UI by ID
-	private GameObject[] UIElements;
+    // store spawned UI by ID
+    private GameObject[] UIElements;
     private bool[] isFruit;
 
     // signal when game restart has occurred
@@ -51,14 +51,14 @@ public class FruitActionManager : MonoBehaviour {
 
     private void Update() {
 
-        if(redrawGame) {
+        if (redrawGame) {
             SpawnUI();
             InitFruitUI();
             redrawGame = false;
         }
 
-        if(PairSelected()) {
-            if(startTimer) {
+        if (PairSelected()) {
+            if (startTimer) {
                 DrawLine();
                 startTimer = false;
             }
@@ -74,9 +74,9 @@ public class FruitActionManager : MonoBehaviour {
                 removalTime = 0.0f;
                 ValidPairCreated();
             }
-            
+
         }
-	}
+    }
 
     // unsub from events to prevent potential future null reference
     private void OnDestroy() {
@@ -90,9 +90,9 @@ public class FruitActionManager : MonoBehaviour {
         this.isFruit = new bool[this.Rows * this.Columns];
 
         for (int i = 0; i < this.Rows; i++) {
-            for(int j = 0; j < this.Columns; j++) {
+            for (int j = 0; j < this.Columns; j++) {
                 GameObject newUI;
-                if (i > 0 && i < this.Rows-1 && j > 0 && j < this.Columns-1) {
+                if (i > 0 && i < this.Rows - 1 && j > 0 && j < this.Columns - 1) {
                     newUI = (GameObject)Instantiate(this.fruitUI, gameObject.transform, false);
                     this.UIElements[this.Columns * i + j] = newUI;
                     isFruit[this.Columns * i + j] = true;
@@ -110,8 +110,8 @@ public class FruitActionManager : MonoBehaviour {
     // set the ID's and neighbours of each fruit element
     private void InitFruitUI() {
         // only iterate through fruit, so avoid outside edge of grid
-        for (int i = 1; i < this.Rows-1; i++) {
-            for (int j = 1; j < this.Columns-1; j++) {
+        for (int i = 1; i < this.Rows - 1; i++) {
+            for (int j = 1; j < this.Columns - 1; j++) {
                 FruitUI UIScript = this.UIElements[this.Columns * i + j].GetComponent<FruitUI>();
                 UIScript.SetId(this.Columns * i + j);
             }
@@ -125,7 +125,7 @@ public class FruitActionManager : MonoBehaviour {
                 Destroy(this.UIElements[this.Columns * i + j]);
             }
         }
-        
+
     }
 
     // replace a FruitUI with a LineUI as pairs are selected by user
@@ -145,7 +145,7 @@ public class FruitActionManager : MonoBehaviour {
          * that each UI element can select correct sprite. The starting and finishing nodes exist as the first
          * and last element of this list to provide context for the line
          */
-        for(int i = 0; i < this.connectingPath.Count; i++) {
+        for (int i = 0; i < this.connectingPath.Count; i++) {
             if (i > 0 && i < this.connectingPath.Count - 1) {
                 GameObject lineElement = UIElements[this.connectingPath[i]];
                 int iPrev = this.connectingPath[i - 1] / this.Columns;
@@ -185,25 +185,25 @@ public class FruitActionManager : MonoBehaviour {
         int iB = idB / this.Columns;
         int jB = idB % this.Columns;
 
-        return (iA != iB && jA != jB);
+        return ((iA != iB && jA != jB) || idA == idB);
     }
 
     // get all possible neighbours of id (N,S,E,W)
-    private List<int> GetNeighbours(int id) {
+    private List<int> GetNeighbours(int id, int numTurns, bool[,] visited) {
         List<int> neighbours = new List<int>();
         int i = id / this.Columns;
         int j = id % this.Columns;
 
-        if (i > 0) {
+        if (i > 0 && !visited[numTurns, this.Columns * (i - 1) + j]) {
             neighbours.Add(this.Columns * (i - 1) + j);
         }
-        if (i < this.Rows-1) {
+        if (i < this.Rows - 1 && !visited[numTurns, this.Columns * (i + 1) + j]) {
             neighbours.Add(this.Columns * (i + 1) + j);
         }
-        if (j > 0) {
+        if (j > 0 && !visited[numTurns, this.Columns * i + j - 1]) {
             neighbours.Add(this.Columns * i + j - 1);
         }
-        if (j < this.Columns-1) {
+        if (j < this.Columns - 1 && !visited[numTurns, this.Columns * i + j + 1]) {
             neighbours.Add(this.Columns * i + j + 1);
         }
         return neighbours;
@@ -229,26 +229,29 @@ public class FruitActionManager : MonoBehaviour {
 
         // paths are only valid if they take up to the max number of turns
         while (numTurns <= MAX_TURNS) {
-            while(numTurnsAgenda.Count > 0) {
+            while (numTurnsAgenda.Count > 0) {
                 list = numTurnsAgenda.Dequeue();
 
                 // can't have more than 2 turns, and must be unvisited, and must either
                 // be the finish or a space with no fruit in it
-                List<int> neighbours = GetNeighbours(list[list.Count - 1]);
-                foreach(int neighbour in neighbours) {
+                List<int> neighbours = GetNeighbours(list[list.Count - 1], numTurns, visited);
+
+                foreach (int neighbour in neighbours) {
                     int currTurns = numTurns;
-                    
+
                     if (list.Count > 1 && IsTurn(list[list.Count - 2], neighbour)) {
                         currTurns++;
                     }
-                    // a path needs 3 turns min to visit somewhere it already has been, so
-                    // don't need to check for a path colliding with itself
-                    if (currTurns <= MAX_TURNS && !visited[currTurns, neighbour]
-                        && (neighbour == IdFinish || !this.isFruit[neighbour])) {
-                        
-                        List<int> newList = new List<int>(list);
-                        newList.Add(neighbour);
-                        visited[currTurns, neighbour] = true;
+                    List<int> newList = new List<int>(list);
+                    newList.Add(neighbour);
+
+                    if (currTurns <= MAX_TURNS && !visited[currTurns, neighbour]) {
+
+                        //List<int> newList = new List<int>(list);
+                        //newList.Add(neighbour);
+                        for (int i = currTurns + 1; i <= MAX_TURNS; i++) {
+                            visited[i, neighbour] = true;
+                        }
                         if (neighbour == IdFinish) {
                             this.connectingPath = newList;
                             return true;
@@ -273,26 +276,35 @@ public class FruitActionManager : MonoBehaviour {
         return false;
     }
 
+    private string DebugList(List<int> list) {
+        string printMe = ", ";
+        for (int j = 0; j < list.Count; j++) {
+            printMe += list[j] + " ";
+        }
+        return printMe;
+    }
+
     /**** Events ****/
     private void HandleFruitSelect(int id) {
         // line elements can't be selected
-        if(fruitSelectedIDOne == -1 && fruitSelectedIDTwo == -1) {
-			fruitSelectedIDOne = id;
-        } else if(fruitSelectedIDOne != -1 && fruitSelectedIDTwo == -1) {
+        if (fruitSelectedIDOne == -1 && fruitSelectedIDTwo == -1) {
+            fruitSelectedIDOne = id;
+        } else if (fruitSelectedIDOne != -1 && fruitSelectedIDTwo == -1) {
 
             fruitSelectedIDTwo = id;
 
             if (fruitSelectedIDTwo != fruitSelectedIDOne && AreSameType(fruitSelectedIDOne, fruitSelectedIDTwo)
                 && ValidPathExists(fruitSelectedIDOne, fruitSelectedIDTwo)) {
-                
+
                 startTimer = true;
-				
+
             } else {
+
                 // was an invalid second selection (aka not a neighbour)
-				fruitSelectedIDTwo = -1;
-				fruitSelectedIDOne = -1;
+                fruitSelectedIDTwo = -1;
+                fruitSelectedIDOne = -1;
                 connectingPath = null;
-			}
+            }
             // use event handler here to deselect button for good UI
             this.eventSystem.SetSelectedGameObject(null);
         }
